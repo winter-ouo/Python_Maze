@@ -32,7 +32,7 @@
 為了實現 GitHub 提交零衝突（Zero Conflict），專案採用扁平化的解耦架構。開工初期優先定死 `maze_model.py` 骨架檔案，確保各模組對接流暢。
 
 ```text
-RetroMaze-Visualizer
+Python_maze
 │
 ├── README.md
 ├── .gitignore              # 排除 __pycache__ 與本地設定
