@@ -4,12 +4,25 @@
 2. 程式碼放於src資料夾中
 3. (待增...)
 
-## 運行環境
+## 運行
+### 環境
 #### 使用的python環境 3.10
 ```bash
 pip install numpy
 pip install opencv-python
 ```
+### 如何執行
+#### 先確定套件清單 `pip list`
+```text
+Package       Version
+------------- ---------
+numpy         2.2.6
+opencv-python 4.13.0.92
+pip           23.0.1
+setuptools    65.5.0
+```
+### 如何執行
+#### 輸入 `python src/main.py`
 ## 目前專案架構
 ```text
 PYTHON_MAZE/
