@@ -8,7 +8,6 @@ def main():
     player_pos = maze.start_pos
     
     print("====================================================")
-    print("  Python_maze MVP 版本完全整合成功！")
     print("  【操作說明】")
     print("  - 移動：使用 W, A, S, D 或 鍵盤方向鍵 (↑ ↓ ← →)")
     print("  - 離開：按 ESC 鍵")
