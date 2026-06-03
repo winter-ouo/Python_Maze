@@ -79,7 +79,7 @@ def main():
     print("====================================================")
     while True:
         # ==========================================
-        # 【狀態 0：首頁選單畫面】
+        # 【首頁選單畫面】
         # ==========================================
         if game_state == 0:
             cv2.setMouseCallback(window_name, mouse_click_handler, param="HOME")
@@ -111,7 +111,7 @@ def main():
                 game_state = 1
                 
         # ==========================================
-        # 【狀態 1：核心遊戲與 AI 側欄畫面】
+        # 【遊戲與側欄畫面】
         # ==========================================
         elif game_state == 1:
             cv2.setMouseCallback(window_name, mouse_click_handler, param="GAME")
