@@ -32,11 +32,11 @@ def main():
         
         # 2. 觸發 A* 尋路機制 (按下空白鍵)
         if key == 32:  
-            print("\n🤖 AI 大腦啟動中，計算 A* 最短路徑...")
+            print("\n 計算 A* 最短路徑...")
             path, visited_order = a_star_search(maze)
             
             # 動畫特效
-            print("展示 A* 擴散")
+            print(" 展示 A* 擴散")
             step = max(1, len(visited_order) // 100) # 按比例決定播放速度
             for i in range(0, len(visited_order), step):
                 current_visited = visited_order[:i]
@@ -48,7 +48,7 @@ def main():
             # 將最終路徑定格在畫面上
             ai_path = path
             ai_visited = visited_order
-            print(f"✨ 尋路完成！共探索了 {len(visited_order)} 個格子，最短路徑為 {len(path)} 步！")
+            print(f" A* 尋路完成！共探索了 {len(visited_order)} 個格子，最短路徑為 {len(path)} 步！")
 
         # 3. 手動控制移動
         is_up    = (char == 'w' or key == 2490368)
