@@ -11,17 +11,17 @@ def generate_maze(w, h, openness: float = 0.0, seed: int = None) -> Maze:
         random.seed(seed)
         np.random.seed(seed)
 
-    # 1. 初始化資料模型 (預設全都是牆壁 1)
+    # 1. 初始化資料模型
     maze = Maze(w, h)
     maze.grid.fill(1)
 
     start_pos = maze.start_pos
     end_pos = maze.end_pos
 
-    # 2. 將起點打通為通道 (0)
+    # 2. 將起點變為通道
     maze.grid[start_pos[0], start_pos[1]] = 0
 
-    # 3. 初始化牆壁清單 (Wall List)
+    # 初始化牆壁
     walls = []
     
     def add_walls(r, c):
@@ -37,7 +37,7 @@ def generate_maze(w, h, openness: float = 0.0, seed: int = None) -> Maze:
     # 將起點周圍的牆壁加入清單
     add_walls(start_pos[0], start_pos[1])
 
-    # 4. Prim 核心隨機啃食迴圈
+    # 4. Prim 核心
     while walls:
         wall_idx = random.randint(0, len(walls) - 1)
         wr, wc, nr, nc = walls.pop(wall_idx)
@@ -47,7 +47,7 @@ def generate_maze(w, h, openness: float = 0.0, seed: int = None) -> Maze:
             maze.grid[nr, nc] = 0
             add_walls(nr, nc)
 
-    # 5. 保障機制：強制挖通資料模型指定的終點格子
+    # 保障機制
     maze.grid[end_pos[0], end_pos[1]] = 0
 
     return maze
