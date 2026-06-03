@@ -1,15 +1,14 @@
 import cv2
 import numpy as np
 
-def draw_single(maze, player_pos):
-    cell_size = 15  # 若視窗太大可以來這裡改!
+def draw_single(maze, player_pos, path=None, visited=None):
+    cell_size = 15  
     img_h = maze.height * cell_size
     img_w = maze.width * cell_size
     
-    # 建立 BGR 彩色畫布
     canvas = np.zeros((img_h, img_w, 3), dtype=np.uint8)
     
-    # 繪製迷宮
+    # 1. 繪製迷宮本體
     for r in range(maze.height):
         for c in range(maze.width):
             y1, x1 = r * cell_size, c * cell_size
@@ -18,14 +17,30 @@ def draw_single(maze, player_pos):
             if maze.grid[r, c] == 1:
                 color = (50, 50, 50)  # 牆壁：深灰色
             else:
-                color = (240, 240, 240)  # 通道：接近白色
+                color = (240, 240, 240)  # 通道：白色
                 
             cv2.rectangle(canvas, (x1, y1), (x2, y2), color, -1)
             
-    # --- 畫出終點 (紅色) ---
-    # 讀取 Model 定義的 end_pos，並且 X 和 Y 在 OpenCV 裡正確對齊 (ex, ey)
+    # 2.畫出 AI 探索過的足跡 (淡黃色)
+    if visited:
+        for vr, vc in visited:
+            y1, x1 = vr * cell_size, vc * cell_size
+            y2, x2 = y1 + cell_size, x1 + cell_size
+            # 在通道上覆蓋一層淡黃色
+            cv2.rectangle(canvas, (x1 + 1, y1 + 1), (x2 - 1, y2 - 1), (200, 240, 255), -1)
+
+    # 3.畫出 A* 算出的正確路徑 (螢光綠)
+    if path:
+        for pr, pc in path:
+            if (pr, pc) != maze.start_pos and (pr, pc) != maze.end_pos:
+                y1, x1 = pr * cell_size, pc * cell_size
+                y2, x2 = y1 + cell_size, x1 + cell_size
+
+                cv2.rectangle(canvas, (x1 + 1, y1 + 1), (x2 - 1, y2 - 1), (50, 220, 50), -1)
+
+    # 4. 畫出終點 (紅色)
     ey, ex = maze.end_pos
-    padding = 2  # 固定內縮 2 像素
+    padding = 2  
     cv2.rectangle(
         canvas, 
         (ex * cell_size + padding, ey * cell_size + padding), 
@@ -34,7 +49,7 @@ def draw_single(maze, player_pos):
         -1
     )
     
-    # --- 畫出玩家 (藍色圓球) ---
+    # 5. 畫出玩家 (藍色圓球)
     py, px = player_pos
     center_x = px * cell_size + cell_size // 2
     center_y = py * cell_size + cell_size // 2
@@ -46,12 +61,7 @@ def draw_single(maze, player_pos):
         radius, 
         (255, 0, 0), 
         -1, 
-        lineType=cv2.LINE_AA  # 圓滑邊緣
+        lineType=cv2.LINE_AA
     )
     
     return canvas
-
-def update_display(canvas, delay=30):
-    cv2.imshow("Python_maze MVP", canvas)
-    key = cv2.waitKey(delay) & 0xFF
-    return key
