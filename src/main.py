@@ -146,15 +146,15 @@ def main():
                 algo_key = ""
                 if algo_trigger == '1':
                     search_func = pathfinding.a_star_search
-                    current_algo = "A* Search"
+                    current_algo = "A* Search "
                     algo_key = "a_star_time"
                 elif algo_trigger == '2':
                     search_func = pathfinding.bfs_search
-                    current_algo = "BFS / Flood Fill"
+                    current_algo = "BFS "
                     algo_key = "bfs_time"
                 elif algo_trigger == '3':
                     search_func = pathfinding.dfs_search
-                    current_algo = "DFS (Snake)"
+                    current_algo = "DFS "
                     algo_key = "dfs_time"
                 elif algo_trigger == '4':
                     search_func = pathfinding.wall_follower_search

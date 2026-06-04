@@ -100,13 +100,13 @@ def draw_sidebar(height, current_algo, stats, seed_val, is_cleared, hover_btn=No
     is_h = (hover_btn == '2')
     cv2.rectangle(sidebar, (20, 380), (230, 410), c_hover if is_h else c_normal, -1)
     cv2.rectangle(sidebar, (20, 380), (230, 410), b_hover if is_h else b_normal, 2 if is_h else 1)
-    cv2.putText(sidebar, "[2] BFS / Flood", (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1 if is_h else 1)
+    cv2.putText(sidebar, "[2] BFS ", (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1 if is_h else 1)
     
     # 按鈕 3: DFS
     is_h = (hover_btn == '3')
     cv2.rectangle(sidebar, (20, 425), (230, 455), c_hover if is_h else c_normal, -1)
     cv2.rectangle(sidebar, (20, 425), (230, 455), b_hover if is_h else b_normal, 2 if is_h else 1)
-    cv2.putText(sidebar, "[3] DFS (Snake)", (50, 445), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1 if is_h else 1)
+    cv2.putText(sidebar, "[3] DFS ", (50, 445), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1 if is_h else 1)
     
     # 按鈕 4: 沿牆法
     is_h = (hover_btn == '4')
@@ -137,8 +137,7 @@ def draw_home_screen(width, height, is_btn_hover=False):
     cv2.rectangle(home_canvas, (40, 40), (width - 40, height - 40), (60, 60, 60), 2)
     cv2.rectangle(home_canvas, (50, 50), (width - 50, height - 50), (40, 40, 40), 1)
     
-    cv2.putText(home_canvas, "PYTHON MAZE EXPERT", (280, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (255, 255, 255), 4, lineType=cv2.LINE_AA)
-    cv2.putText(home_canvas, "Multi-Algorithm Showdown Platform", (285, 250), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 150), 1, lineType=cv2.LINE_AA)
+    cv2.putText(home_canvas, "PYTHON MAZE GAME", (280, 200), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (255, 255, 255), 4, lineType=cv2.LINE_AA)
     cv2.putText(home_canvas, "Final Project v1.0", (430, 320), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1)
 
     c_btn = (130, 95, 75) if is_btn_hover else (80, 60, 50)
