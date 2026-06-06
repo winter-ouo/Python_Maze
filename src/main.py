@@ -291,7 +291,7 @@ def main():
                 cv2.rectangle(sidebar_canvas, (20, 240), (230, 280), c_p2, -1)
                 cv2.rectangle(sidebar_canvas, (20, 240), (230, 280), b_p2,
                               2 if fog_players == 2 or hover_fog_p == '2' else 1)
-                cv2.putText(sidebar_canvas, "2P: CO-OP Mode", (45, 265), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
+                cv2.putText(sidebar_canvas, "2P: Two Mode", (45, 265), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                             (255, 255, 255), 1, cv2.LINE_AA)
 
                 cv2.putText(sidebar_canvas, "CONTROLS:", (20, 330), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (170, 170, 170), 1,
