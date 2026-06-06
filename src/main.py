@@ -442,6 +442,11 @@ def main():
                 # 判定合作勝利：任一玩家抵達終點，即全隊破關
                 if player_pos == maze.end_pos or (fog_players == 2 and player2_pos == maze.end_pos):
                     player_game_over = True
+                    winner = "P1 (BLUE)" if fog_players == 2 else "PLAYER"
+                    stats["player_time"] = time.time() - player_start_time
+                elif fog_players == 2 and player2_pos == maze.end_pos:
+                    player_game_over = True
+                    winner = "P2 (GREEN)"
                     stats["player_time"] = time.time() - player_start_time
 
     cv2.destroyAllWindows()
