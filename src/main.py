@@ -218,13 +218,13 @@ def main():
 
                 # === [優化] 在 DEFAULT 模式通關時，於側邊欄最下方增添操作選單提示 ===
                 if player_game_over:
-                    cv2.rectangle(sidebar_canvas, (15, 620), (235, 710), (50, 40, 40), -1)
-                    cv2.rectangle(sidebar_canvas, (15, 620), (235, 710), (0, 255, 0), 1)
-                    cv2.putText(sidebar_canvas, "PLAY AGAIN?", (30, 645), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
+                    cv2.rectangle(sidebar_canvas, (15, 660), (235, 750), (50, 40, 40), -1)
+                    cv2.rectangle(sidebar_canvas, (15, 660), (235, 750), (0, 255, 0), 1)
+                    cv2.putText(sidebar_canvas, "PLAY AGAIN?", (30, 685), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                                 (100, 255, 255), 1, cv2.LINE_AA)
-                    cv2.putText(sidebar_canvas, "Press 'R' : Restart", (25, 675), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
+                    cv2.putText(sidebar_canvas, "Press 'R' : Restart", (25, 715), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
                                 (255, 255, 255), 1, cv2.LINE_AA)
-                    cv2.putText(sidebar_canvas, "Press 'ESC': Main Menu", (25, 695), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
+                    cv2.putText(sidebar_canvas, "Press 'ESC': Main Menu", (25, 735), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
                                 (200, 200, 200), 1, cv2.LINE_AA)
 
                 full_window = np.hstack((maze_canvas, sidebar_canvas))
