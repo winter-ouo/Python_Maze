@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time  # === [新增] 引入 time 模組來計算每 10 秒現行 0.5 秒的時間差 ===
 
 
 def draw_single(maze, player_pos, path=None, visited=None, player2_pos=None):
@@ -9,16 +10,44 @@ def draw_single(maze, player_pos, path=None, visited=None, player2_pos=None):
 
     canvas = np.zeros((img_h, img_w, 3), dtype=np.uint8)
 
+    # ========================================================
+    # === [新增] 閃爍邏輯計算 ===
+    # 取當前時間（秒）對 10 取餘數。如果餘數小於 0.5 秒，代表進入「現行時間」
+    # ========================================================
+    current_time_mod = time.time() % 8.0
+    show_key_pulsing = (current_time_mod <= 2.0)
+
     # 繪製迷宮
     for r in range(maze.height):
         for c in range(maze.width):
             y1, x1 = r * cell_size, c * cell_size
             y2, x2 = y1 + cell_size, x1 + cell_size
-            if maze.grid[r, c] == 1:
+
+            grid_val = maze.grid[r, c]
+
+            if grid_val == 1:  # 牆壁
                 color = (50, 50, 50)
-            else:
+                cv2.rectangle(canvas, (x1, y1), (x2, y2), color, -1)
+            elif grid_val == 2:  # === [新增] 鑰匙 (KEY_MARK) ===
+                # 先鋪底色（普通走道）
+                cv2.rectangle(canvas, (x1, y1), (x2, y2), (240, 240, 240), -1)
+
+                # 如果是「現行時間」，在走道上畫出耀眼的黃色鑰匙方塊/圖示
+                if show_key_pulsing:
+                    # 內縮一點讓鑰匙看起來像個道具 (黃色 BGR: 0, 220, 255)
+                    padding_key = 3
+                    cv2.rectangle(canvas,
+                                  (x1 + padding_key, y1 + padding_key),
+                                  (x2 - padding_key, y2 - padding_key),
+                                  (0, 220, 255), -1)
+                    # 加個小框框讓它更明顯
+                    cv2.rectangle(canvas,
+                                  (x1 + padding_key, y1 + padding_key),
+                                  (x2 - padding_key, y2 - padding_key),
+                                  (0, 150, 200), 1)
+            else:  # 普通走道 (0)
                 color = (240, 240, 240)
-            cv2.rectangle(canvas, (x1, y1), (x2, y2), color, -1)
+                cv2.rectangle(canvas, (x1, y1), (x2, y2), color, -1)
 
     # 畫出演算法足跡與正確路徑
     if visited:
@@ -43,7 +72,7 @@ def draw_single(maze, player_pos, path=None, visited=None, player2_pos=None):
     cv2.circle(canvas, (px * cell_size + cell_size // 2, py * cell_size + cell_size // 2), radius, (255, 0, 0), -1,
                lineType=cv2.LINE_AA)
 
-    # [新增] 畫出玩家二 (綠色圓球)
+    # 畫出玩家二 (綠色圓球)
     if player2_pos:
         p2y, p2x = player2_pos
         cv2.circle(canvas, (p2x * cell_size + cell_size // 2, p2y * cell_size + cell_size // 2), radius, (0, 255, 0),

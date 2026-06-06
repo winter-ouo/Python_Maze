@@ -1,11 +1,14 @@
-from maze_generator import generate_maze
-import pathfinding
-import renderer
 import cv2
 import numpy as np
 import time
 import random
+from maze_generator import generate_maze
+import pathfinding
+import renderer
 from fog_effect import apply_fog_of_war
+
+# === 全域引入與設定 ===
+import key as key_sys
 
 clicked_algo_choice = None
 clicked_home_start = False
@@ -15,7 +18,7 @@ current_hover_btn = None
 home_btn_hovered = False
 fog_btn_hovered = False
 
-# === [新增] 全域變數，讓滑鼠可以跨功能知道目前的模式與人數按鈕狀態 ===
+# === 全域變數，讓滑鼠可以跨功能知道目前的模式與人數按鈕狀態 ===
 CURRENT_MODE = "DEFAULT"
 clicked_fog_p_choice = None  # 儲存點擊了 '1' (1P) 還是 '2' (2P)
 hover_fog_p = None  # 儲存滑鼠正懸浮在 '1' 還是 '2' 上
@@ -64,7 +67,7 @@ def mouse_click_handler(event, x, y, flags, param):
                     current_hover_btn = None
 
             elif CURRENT_MODE == "FOG":
-                # [新增] 偵測迷霧模式側邊欄的 1P/2P 按鈕懸浮
+                # 偵測迷霧模式側邊欄的 1P/2P 按鈕懸浮
                 if 20 <= sidebar_x <= 230:
                     if 180 <= sidebar_y <= 220:
                         hover_fog_p = '1'
@@ -101,7 +104,7 @@ def mouse_click_handler(event, x, y, flags, param):
                         clicked_algo_choice = '4'
 
             elif CURRENT_MODE == "FOG":
-                # [新增] 偵測點擊 1P 還是 2P 按鈕
+                # 偵測點擊 1P 還是 2P 按鈕
                 if 20 <= sidebar_x <= 230:
                     if 180 <= sidebar_y <= 220:
                         clicked_fog_p_choice = '1'
@@ -124,20 +127,21 @@ def main():
     maze = None
     player_pos = None
     player2_pos = None
-    winner = None
     CURRENT_SEED = 0
     current_algo = "None"
     stats = {}
     ai_path, ai_visited = None, None
     player_has_moved, player_start_time, player_game_over = False, None, False
 
-    fog_players = 1  # [新增] 紀錄迷霧模式當前人數，預設為 1P 單人
+    fog_players = 1
     CURRENT_MODE = "DEFAULT"
 
     print("====================================================")
     print("              Python_maze【操作說明】     ")
-    print("      - 預設模式：可於右側側欄選擇演算法觀看尋路")
-    print("      - 迷霧模式：可在右側即時切換單人(1P)或雙人(2P)挑戰")
+    print("      - 預設模式：可於右側側欄選擇演算法觀看尋路（無鑰匙限制）")
+    print("      - 迷霧模式：可在右側即時切換單人(1P)或雙人(2P)合作挑戰")
+    print("      - 鑰匙機制：【僅限迷霧模式】每 8 秒現行 2 秒，需取得方可通關！")
+    print("      - 通關結算：可按 'R' 鍵再來一局，或按 'ESC' 返回主選單")
     print("====================================================")
 
     while True:
@@ -148,7 +152,6 @@ def main():
             cv2.setMouseCallback(window_name, mouse_click_handler, param="HOME")
             home_frame = renderer.draw_home_screen(WINDOW_WIDTH, WINDOW_HEIGHT, home_btn_hovered)
 
-            # 首頁按鈕改回乾淨的 "FOG MODE"
             btn_color = (60, 60, 80) if not fog_btn_hovered else (90, 90, 120)
             cv2.rectangle(home_frame, (380, 480), (630, 540), btn_color, -1)
             cv2.rectangle(home_frame, (380, 480), (630, 540), (200, 200, 200), 2)
@@ -168,12 +171,19 @@ def main():
 
                 clicked_home_start = False
                 clicked_fog_start = False
+
+                # === 抽離出初始化關卡的獨立區塊 (方便通關後再來一次呼叫) ===
                 CURRENT_SEED = random.randint(0, 2147483647)
                 maze = generate_maze(w=51, h=51, seed=CURRENT_SEED)
+
+                if CURRENT_MODE == "FOG":
+                    key_sys.spawn_key_smart(maze)
+                else:
+                    key_sys.has_key = True
+
                 player_pos = maze.start_pos
                 player2_pos = maze.start_pos
-                winner = None
-                fog_players = 1  # 每次進遊戲預設先從 1P 開始
+                fog_players = 1
 
                 stats = {"explored": 0, "path_len": 0, "a_star_time": 0.0, "bfs_time": 0.0, "dfs_time": 0.0,
                          "wall_time": 0.0, "player_time": 0.0}
@@ -192,39 +202,61 @@ def main():
             if player_has_moved and not player_game_over:
                 stats["player_time"] = time.time() - player_start_time
 
-            # [新增] 接收並處理右邊側邊欄的人數切換點擊
             if CURRENT_MODE == "FOG" and clicked_fog_p_choice is not None:
-                if clicked_fog_p_choice == '1' and not player_has_moved:  # 遊戲還沒開始移動前允許切換
+                if clicked_fog_p_choice == '1' and not player_has_moved:
                     fog_players = 1
                 elif clicked_fog_p_choice == '2' and not player_has_moved:
                     fog_players = 2
                 clicked_fog_p_choice = None
 
-            # 根據人數決定要不要畫二號玩家
             maze_canvas = renderer.draw_single(maze, player_pos, path=ai_path, visited=ai_visited,
                                                player2_pos=player2_pos if fog_players == 2 else None)
 
             if CURRENT_MODE == "DEFAULT":
                 sidebar_canvas = renderer.draw_sidebar(maze_canvas.shape[0], current_algo, stats, CURRENT_SEED,
                                                        player_game_over, current_hover_btn)
+
+                # === [優化] 在 DEFAULT 模式通關時，於側邊欄最下方增添操作選單提示 ===
+                if player_game_over:
+                    cv2.rectangle(sidebar_canvas, (15, 660), (235, 750), (50, 40, 40), -1)
+                    cv2.rectangle(sidebar_canvas, (15, 660), (235, 750), (0, 255, 0), 1)
+                    cv2.putText(sidebar_canvas, "PLAY AGAIN?", (30, 685), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
+                                (100, 255, 255), 1, cv2.LINE_AA)
+                    cv2.putText(sidebar_canvas, "Press 'R' : Restart", (25, 715), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
+                                (255, 255, 255), 1, cv2.LINE_AA)
+                    cv2.putText(sidebar_canvas, "Press 'ESC': Main Menu", (25, 735), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
+                                (200, 200, 200), 1, cv2.LINE_AA)
+
                 full_window = np.hstack((maze_canvas, sidebar_canvas))
 
             elif CURRENT_MODE == "FOG":
-                # 根據人數決定迷霧光源 (1個或2個)
                 if fog_players == 1:
                     maze_canvas = apply_fog_of_war(maze_canvas, [player_pos], cell_size=15, visible_radius=4)
                 else:
                     maze_canvas = apply_fog_of_war(maze_canvas, [player_pos, player2_pos], cell_size=15,
                                                    visible_radius=4)
 
+                # 強制讓現行的鑰匙「穿透迷霧」直接渲染在畫布最上層 (每 8 秒的前 2 秒)
+                current_time_mod = time.time() % 8.0
+                if current_time_mod <= 2.0:
+                    cell_size = 15
+                    for r in range(maze.height):
+                        for c in range(maze.width):
+                            if maze.grid[r, c] == 2:
+                                y1, x1 = r * cell_size, c * cell_size
+                                y2, x2 = y1 + cell_size, x1 + cell_size
+                                padding_key = 3
+                                cv2.rectangle(maze_canvas, (x1 + padding_key, y1 + padding_key),
+                                              (x2 - padding_key, y2 - padding_key), (0, 220, 255), -1)
+                                cv2.rectangle(maze_canvas, (x1 + padding_key, y1 + padding_key),
+                                              (x2 - padding_key, y2 - padding_key), (0, 150, 200), 1)
+
                 sidebar_width = WINDOW_WIDTH - maze_canvas.shape[1]
                 sidebar_canvas = np.zeros((maze_canvas.shape[0], sidebar_width, 3), dtype=np.uint8)
-                sidebar_canvas[:] = (35, 30, 30)  # 保持跟隊友一樣的深色底色
+                sidebar_canvas[:] = (35, 30, 30)
 
-                # 畫邊界線
                 cv2.line(sidebar_canvas, (0, 0), (0, maze_canvas.shape[0]), (70, 70, 70), 2)
 
-                # 標題區
                 cv2.putText(sidebar_canvas, "FOG MODE", (25, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2,
                             cv2.LINE_AA)
                 cv2.line(sidebar_canvas, (20, 48), (230, 48), (100, 100, 100), 1)
@@ -234,7 +266,7 @@ def main():
                 cv2.putText(sidebar_canvas, "SELECT PLAYERS:", (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                             (255, 255, 255), 1, cv2.LINE_AA)
 
-                # === [新增] 動態繪製 1P 按鈕 (選中時變綠色高亮，懸浮時變灰色) ===
+                # 1P 按鈕
                 if fog_players == 1:
                     c_p1, b_p1 = (50, 120, 50), (100, 255, 100)
                 elif hover_fog_p == '1':
@@ -248,7 +280,7 @@ def main():
                 cv2.putText(sidebar_canvas, "1P: Single Player", (45, 205), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                             (255, 255, 255), 1, cv2.LINE_AA)
 
-                # === [新增] 動態繪製 2P 按鈕 ===
+                # 2P 按鈕
                 if fog_players == 2:
                     c_p2, b_p2 = (50, 120, 50), (100, 255, 100)
                 elif hover_fog_p == '2':
@@ -259,10 +291,9 @@ def main():
                 cv2.rectangle(sidebar_canvas, (20, 240), (230, 280), c_p2, -1)
                 cv2.rectangle(sidebar_canvas, (20, 240), (230, 280), b_p2,
                               2 if fog_players == 2 or hover_fog_p == '2' else 1)
-                cv2.putText(sidebar_canvas, "2P: Two Players", (45, 265), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
+                cv2.putText(sidebar_canvas, "2P: Two Mode", (45, 265), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                             (255, 255, 255), 1, cv2.LINE_AA)
 
-                # 動態控制說明文字
                 cv2.putText(sidebar_canvas, "CONTROLS:", (20, 330), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (170, 170, 170), 1,
                             cv2.LINE_AA)
                 if fog_players == 1:
@@ -274,36 +305,65 @@ def main():
                     cv2.putText(sidebar_canvas, "P2 (Green): Arrow Keys", (20, 390), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                                 (100, 255, 100), 1, cv2.LINE_AA)
 
+                # 迷霧模式側欄的鑰匙狀態
+                key_str = "KEY: RECEIVED 🔑" if key_sys.has_key else "KEY: NEEDED ❌"
+                key_color = (100, 255, 100) if key_sys.has_key else (100, 100, 255)
+                cv2.putText(sidebar_canvas, key_str, (20, 430), cv2.FONT_HERSHEY_SIMPLEX, 0.45, key_color, 1,
+                            cv2.LINE_AA)
+
                 cv2.putText(sidebar_canvas, f"Map Seed: {CURRENT_SEED}", (20, 700), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                             (0, 200, 200), 1, cv2.LINE_AA)
                 cv2.putText(sidebar_canvas, "ESC: Return to Menu", (20, 740), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                             (100, 100, 100), 1, cv2.LINE_AA)
 
-                # 結算畫面
+                # === [優化] 迷霧模式結算與「再來一次 / 離開」介面整合 ===
                 if player_game_over:
-                    cv2.putText(sidebar_canvas, "GAME OVER!", (30, 460), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2,
+                    cv2.putText(sidebar_canvas, "GAME OVER!", (30, 480), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2,
                                 cv2.LINE_AA)
                     if fog_players == 1:
-                        cv2.putText(sidebar_canvas, "You Escaped!", (30, 500), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                        cv2.putText(sidebar_canvas, "You Escaped!", (30, 520), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                                     (255, 255, 255), 1, cv2.LINE_AA)
                     else:
-                        win_color = (100, 255, 100) if "P2" in winner else (255, 150, 50)
-                        cv2.putText(sidebar_canvas, f"{winner} WINS!", (30, 500), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                                    win_color, 2, cv2.LINE_AA)
-                    cv2.putText(sidebar_canvas, f"Time: {stats['player_time']:.2f} s", (30, 540),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+                        cv2.putText(sidebar_canvas, "TEAM ESCAPED!", (30, 520), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                                    (100, 255, 255), 2, cv2.LINE_AA)
+                    cv2.putText(sidebar_canvas, f"Time: {stats['player_time']:.2f} s", (30, 555),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+
+                    # 增添再來局的快捷指示文字
+                    cv2.line(sidebar_canvas, (20, 580), (230, 580), (100, 100, 100), 1)
+                    cv2.putText(sidebar_canvas, "R : Play Again", (30, 610), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
+                                (0, 255, 255), 1, cv2.LINE_AA)
+                    cv2.putText(sidebar_canvas, "ESC: Return to Menu", (30, 635), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
+                                (200, 200, 200), 1, cv2.LINE_AA)
 
                 full_window = np.hstack((maze_canvas, sidebar_canvas))
 
             cv2.imshow(window_name, full_window)
 
-            key = cv2.waitKeyEx(15)
-            if key == 27:
+            key = cv2.waitKeyEx(1)
+            if key == 27:  # 無論何時按 ESC 都能退回主畫面
                 game_state = 0
                 current_hover_btn = None
                 continue
 
             char = chr(key & 0xFF).lower() if 32 <= (key & 0xFF) <= 126 else ""
+
+            # === [新增] 當遊戲結束時，攔截玩家按下的功能鍵 (R 鍵重新開始) ===
+            if player_game_over and char == 'r':
+                CURRENT_SEED = random.randint(0, 2147483647)
+                maze = generate_maze(w=51, h=51, seed=CURRENT_SEED)
+                if CURRENT_MODE == "FOG":
+                    key_sys.spawn_key_smart(maze)
+                else:
+                    key_sys.has_key = True
+                player_pos = maze.start_pos
+                player2_pos = maze.start_pos
+                stats = {"explored": 0, "path_len": 0, "a_star_time": 0.0, "bfs_time": 0.0, "dfs_time": 0.0,
+                         "wall_time": 0.0, "player_time": 0.0}
+                ai_path, ai_visited = None, None
+                player_has_moved, player_start_time, player_game_over = False, None, False
+                current_algo = "None"
+                continue
 
             algo_trigger = None
             if CURRENT_MODE == "DEFAULT":
@@ -349,34 +409,38 @@ def main():
             if not player_game_over:
                 p1_moved = p2_moved = False
 
-                # 玩家一 (藍色): W, A, S, D (任何模式都能動)
-                if char == 'w':
-                    player_pos = maze.move_player(player_pos, 'w'); p1_moved = True
-                elif char == 's':
-                    player_pos = maze.move_player(player_pos, 's'); p1_moved = True
-                elif char == 'a':
-                    player_pos = maze.move_player(player_pos, 'a'); p1_moved = True
-                elif char == 'd':
-                    player_pos = maze.move_player(player_pos, 'd'); p1_moved = True
+                # 玩家一 (藍色): W, A, S, D
+                if char in ['w', 's', 'a', 'd']:
+                    next_p1 = maze.move_player(player_pos, char)
+                    if CURRENT_MODE == "DEFAULT" or key_sys.check_key_logic(next_p1, maze):
+                        player_pos = next_p1
+                        p1_moved = True
 
-                # 玩家二 (綠色): 鍵盤方向鍵 (只有在切換到 2P 模式時才開機)
+                # 玩家二 (綠色): 鍵盤方向鍵 (只有在切換到 2P 合作模式時開機)
                 if fog_players == 2:
+                    move_dir = None
                     if key == 2490368:
-                        player2_pos = maze.move_player(player2_pos, 'w'); p2_moved = True
+                        move_dir = 'w'
                     elif key == 2621440:
-                        player2_pos = maze.move_player(player2_pos, 's'); p2_moved = True
+                        move_dir = 's'
                     elif key == 2424832:
-                        player2_pos = maze.move_player(player2_pos, 'a'); p2_moved = True
+                        move_dir = 'a'
                     elif key == 2555904:
-                        player2_pos = maze.move_player(player2_pos, 'd'); p2_moved = True
+                        move_dir = 'd'
+
+                    if move_dir:
+                        next_p2 = maze.move_player(player2_pos, move_dir)
+                        if CURRENT_MODE == "DEFAULT" or key_sys.check_key_logic(next_p2, maze):
+                            player2_pos = next_p2
+                            p2_moved = True
 
                 if p1_moved or p2_moved:
                     if not player_has_moved:
                         player_has_moved = True
                         player_start_time = time.time()
 
-                # 判定勝利
-                if player_pos == maze.end_pos:
+                # 判定合作勝利：任一玩家抵達終點，即全隊破關
+                if player_pos == maze.end_pos or (fog_players == 2 and player2_pos == maze.end_pos):
                     player_game_over = True
                     winner = "P1 (BLUE)" if fog_players == 2 else "PLAYER"
                     stats["player_time"] = time.time() - player_start_time
