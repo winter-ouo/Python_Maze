@@ -3,7 +3,7 @@ import numpy as np
 import time  # === [新增] 引入 time 模組來計算每 10 秒現行 0.5 秒的時間差 ===
 
 
-def draw_single(maze, player_pos, path=None, visited=None, player2_pos=None):
+def draw_single(maze, player_pos, path=None, visited=None, player2_pos=None, monster_pos=None):
     cell_size = 15
     img_h = maze.height * cell_size
     img_w = maze.width * cell_size
@@ -77,6 +77,23 @@ def draw_single(maze, player_pos, path=None, visited=None, player2_pos=None):
         p2y, p2x = player2_pos
         cv2.circle(canvas, (p2x * cell_size + cell_size // 2, p2y * cell_size + cell_size // 2), radius, (0, 255, 0),
                    -1, lineType=cv2.LINE_AA)
+    # ======================
+    # 畫出怪物 (紅色)
+    # ======================
+    if monster_pos:
+        my, mx = monster_pos
+
+        cv2.circle(
+            canvas,
+            (
+                mx * cell_size + cell_size // 2,
+                my * cell_size + cell_size // 2
+            ),
+            radius,
+            (0, 0, 255),
+            -1,
+            lineType=cv2.LINE_AA
+        )
 
     return canvas
 

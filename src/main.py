@@ -6,6 +6,7 @@ from maze_generator import generate_maze
 import pathfinding
 import renderer
 from fog_effect import apply_fog_of_war
+from monster import Monster
 
 # === 全域引入與設定 ===
 import key as key_sys
@@ -128,6 +129,9 @@ def main():
     player_pos = None
     player2_pos = None
     CURRENT_SEED = 0
+    monster = Monster()
+    monster_last_move = time.time()
+    monster_speed = 1.5
     current_algo = "None"
     stats = {}
     ai_path, ai_visited = None, None
@@ -142,6 +146,7 @@ def main():
     print("      - 迷霧模式：可在右側即時切換單人(1P)或雙人(2P)合作挑戰")
     print("      - 鑰匙機制：【僅限迷霧模式】每 8 秒現行 2 秒，需取得方可通關！")
     print("      - 通關結算：可按 'R' 鍵再來一局，或按 'ESC' 返回主選單")
+    print("      - 怪物模式：怪物指出現在迷霧模式，觸碰到即死亡")
     print("====================================================")
 
     while True:
@@ -175,7 +180,8 @@ def main():
                 # === 抽離出初始化關卡的獨立區塊 (方便通關後再來一次呼叫) ===
                 CURRENT_SEED = random.randint(0, 2147483647)
                 maze = generate_maze(w=51, h=51, seed=CURRENT_SEED)
-
+                monster = Monster()
+                monster_last_move = time.time()
                 if CURRENT_MODE == "FOG":
                     key_sys.spawn_key_smart(maze)
                 else:
@@ -202,15 +208,39 @@ def main():
             if player_has_moved and not player_game_over:
                 stats["player_time"] = time.time() - player_start_time
 
+                if CURRENT_MODE == "FOG":
+
+                    if (
+                            player_has_moved
+                            and not monster.spawned
+                            and time.time() - player_start_time > 5
+                    ):
+                        path, _ = pathfinding.a_star_search(maze)
+                        monster.spawn(path)
+
+                        print("怪物生成成功")
             if CURRENT_MODE == "FOG" and clicked_fog_p_choice is not None:
                 if clicked_fog_p_choice == '1' and not player_has_moved:
                     fog_players = 1
                 elif clicked_fog_p_choice == '2' and not player_has_moved:
                     fog_players = 2
                 clicked_fog_p_choice = None
+            if CURRENT_MODE == "FOG":
 
-            maze_canvas = renderer.draw_single(maze, player_pos, path=ai_path, visited=ai_visited,
-                                               player2_pos=player2_pos if fog_players == 2 else None)
+                if monster.spawned:
+
+                    if time.time() - monster_last_move > monster_speed:
+                        monster.update()
+
+                        monster_last_move = time.time()
+            maze_canvas = renderer.draw_single(
+                maze,
+                player_pos,
+                path=ai_path,
+                visited=ai_visited,
+                player2_pos=player2_pos if fog_players == 2 else None,
+                monster_pos=monster.pos if CURRENT_MODE == "FOG" else None
+            )
 
             if CURRENT_MODE == "DEFAULT":
                 sidebar_canvas = renderer.draw_sidebar(maze_canvas.shape[0], current_algo, stats, CURRENT_SEED,
@@ -235,6 +265,24 @@ def main():
                 else:
                     maze_canvas = apply_fog_of_war(maze_canvas, [player_pos, player2_pos], cell_size=15,
                                                    visible_radius=4)
+                # =====================
+                # 重畫怪物（蓋在迷霧上）
+                # =====================
+                if monster.spawned:
+                    cell_size = 15
+
+                    r, c = monster.pos
+
+                    center_x = c * cell_size + cell_size // 2
+                    center_y = r * cell_size + cell_size // 2
+
+                    cv2.circle(
+                        maze_canvas,
+                        (center_x, center_y),
+                        5,
+                        (0, 0, 255),
+                        -1
+                    )
 
                 # 強制讓現行的鑰匙「穿透迷霧」直接渲染在畫布最上層 (每 8 秒的前 2 秒)
                 current_time_mod = time.time() % 8.0
@@ -342,6 +390,7 @@ def main():
 
             key = cv2.waitKeyEx(1)
             if key == 27:  # 無論何時按 ESC 都能退回主畫面
+                monster = Monster()
                 game_state = 0
                 current_hover_btn = None
                 continue
@@ -350,6 +399,8 @@ def main():
 
             # === [新增] 當遊戲結束時，攔截玩家按下的功能鍵 (R 鍵重新開始) ===
             if player_game_over and char == 'r':
+                monster = Monster()
+                monster_last_move = time.time()
                 CURRENT_SEED = random.randint(0, 2147483647)
                 maze = generate_maze(w=51, h=51, seed=CURRENT_SEED)
                 if CURRENT_MODE == "FOG":
@@ -438,6 +489,18 @@ def main():
                     if not player_has_moved:
                         player_has_moved = True
                         player_start_time = time.time()
+                # ==================
+                # 怪物碰撞判定
+                # ==================
+                if CURRENT_MODE == "FOG" and monster.spawned:
+
+                    if player_pos == monster.pos:
+                        player_game_over = True
+                        print("玩家被怪物抓到了！")
+
+                    if fog_players == 2 and player2_pos == monster.pos:
+                        player_game_over = True
+                        print("玩家二被怪物抓到了！")
 
                 # 判定合作勝利：任一玩家抵達終點，即全隊破關
                 if player_pos == maze.end_pos or (fog_players == 2 and player2_pos == maze.end_pos):
