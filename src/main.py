@@ -467,21 +467,29 @@ def main():
                         player_pos = next_p1
                         p1_moved = True
 
-                # 玩家二 (綠色): 鍵盤方向鍵 (只有在切換到 2P 合作模式時開機)
-                if fog_players == 2:
-                    move_dir = None
-                    if key == 2490368:
-                        move_dir = 'w'
-                    elif key == 2621440:
-                        move_dir = 's'
-                    elif key == 2424832:
-                        move_dir = 'a'
-                    elif key == 2555904:
-                        move_dir = 'd'
+                # === 獨立抽出來處理：轉換鍵盤方向鍵為方向字元 ===
+                dir_from_arrow = None
+                if key == 2490368:    # 鍵盤上鍵
+                    dir_from_arrow = 'w'
+                elif key == 2621440:  # 鍵盤下鍵
+                    dir_from_arrow = 's'
+                elif key == 2424832:  # 鍵盤左鍵
+                    dir_from_arrow = 'a'
+                elif key == 2555904:  # 鍵盤右鍵
+                    dir_from_arrow = 'd'
 
-                    if move_dir:
-                        next_p2 = maze.move_player(player2_pos, move_dir)
-                        if CURRENT_MODE == "DEFAULT" or key_sys.check_key_logic(next_p2, maze):
+                # === 根據當前模式，分配方向鍵的功能 ===
+                if dir_from_arrow:
+                    if CURRENT_MODE == "DEFAULT":
+                        # 預設模式：方向鍵直接和 WASD 一樣，控制同一個藍色玩家
+                        next_p1 = maze.move_player(player_pos, dir_from_arrow)
+                        player_pos = next_p1
+                        p1_moved = True
+                        
+                    elif CURRENT_MODE == "FOG" and fog_players == 2:
+                        # 迷霧模式：維持原樣，只有在 2P 狀態下，方向鍵才會控制綠色玩家二
+                        next_p2 = maze.move_player(player2_pos, dir_from_arrow)
+                        if key_sys.check_key_logic(next_p2, maze):
                             player2_pos = next_p2
                             p2_moved = True
 
