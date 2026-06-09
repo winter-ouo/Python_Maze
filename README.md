@@ -1,4 +1,4 @@
-# 互動式迷宮遊戲與尋路演算法展示平台
+# Python_Maze
 
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.13-green?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.10-yellow?style=flat-square)
