@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import time
 import random
+import pygame
+import os
 from maze_generator import generate_maze
 import pathfinding
 import renderer
@@ -118,6 +120,25 @@ def main():
     global current_hover_btn, home_btn_hovered, fog_btn_hovered
     global CURRENT_MODE, clicked_fog_p_choice, hover_fog_p
 
+    pygame.mixer.init()
+    pygame.mixer.set_num_channels(16)  # 開啟多聲道防止爆音
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # 載入音效物件 (請確保你的專案資料夾裡有 assets 資料夾與這些 mp3)
+    sound_move = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "move.mp3"))
+    sound_click = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "click.mp3"))
+    sound_search = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "search.mp3"))
+    sound_win = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "victory.mp3"))
+    sound_key=pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "key.mp3"))
+    sound_Died = pygame.mixer.Sound(os.path.join(BASE_DIR, "assets", "Died.mp3"))
+    pygame.mixer.music.load(os.path.join(BASE_DIR, "assets", "back.mp3"))
+    sound_search.set_volume(0.4)
+    sound_move.set_volume(0.3)
+
+
+    pygame.mixer.music.set_volume(0.3)
+    pygame.mixer.music.play(-1)
+
     WINDOW_WIDTH = 1015
     WINDOW_HEIGHT = 765
     window_name = "Python maze game"
@@ -169,6 +190,7 @@ def main():
             if key == 27: break
 
             if clicked_home_start or clicked_fog_start:
+                sound_click.play()
                 if clicked_home_start:
                     CURRENT_MODE = "DEFAULT"
                 else:
@@ -222,8 +244,10 @@ def main():
             if CURRENT_MODE == "FOG" and clicked_fog_p_choice is not None:
                 if clicked_fog_p_choice == '1' and not player_has_moved:
                     fog_players = 1
+                    sound_click.play()
                 elif clicked_fog_p_choice == '2' and not player_has_moved:
                     fog_players = 2
+                    sound_click.play()
                 clicked_fog_p_choice = None
             if CURRENT_MODE == "FOG":
 
@@ -390,6 +414,7 @@ def main():
 
             key = cv2.waitKeyEx(1)
             if key == 27:  # 無論何時按 ESC 都能退回主畫面
+                sound_click.play()
                 monster = Monster()
                 game_state = 0
                 current_hover_btn = None
@@ -399,6 +424,7 @@ def main():
 
             # === [新增] 當遊戲結束時，攔截玩家按下的功能鍵 (R 鍵重新開始) ===
             if player_game_over and char == 'r':
+                sound_click.play()
                 monster = Monster()
                 monster_last_move = time.time()
                 CURRENT_SEED = random.randint(0, 2147483647)
@@ -427,6 +453,8 @@ def main():
                 clicked_algo_choice = None
 
             if algo_trigger:
+                sound_search.play()  # 👈 加上這行
+                ai_anim_start = time.time()
                 search_func = None
                 algo_key = ""
                 if algo_trigger == '1':
@@ -452,6 +480,8 @@ def main():
                                                              player_game_over, current_hover_btn)
                         cv2.imshow(window_name, np.hstack((temp_maze, temp_sidebar)))
                         cv2.waitKey(4)
+                    if player_has_moved and not player_game_over:
+                        player_start_time += (time.time() - ai_anim_start)
 
                     ai_path, ai_visited = path, visited_order
                     stats["explored"], stats["path_len"] = len(visited_order), len(path)
@@ -460,9 +490,17 @@ def main():
             if not player_game_over:
                 p1_moved = p2_moved = False
 
+                old_p1_pos = player_pos  # 👈 加上這行
+                old_p2_pos = player2_pos
+
                 # 玩家一 (藍色): W, A, S, D
                 if char in ['w', 's', 'a', 'd']:
                     next_p1 = maze.move_player(player_pos, char)
+
+                    # 🔑 1. 在被 check_key_logic 判定前，先看下一格是不是鑰匙
+                    if maze.grid[next_p1[0], next_p1[1]] == 2 and not key_sys.has_key:
+                        sound_key.play()  # 🎵 放音效
+
                     if CURRENT_MODE == "DEFAULT" or key_sys.check_key_logic(next_p1, maze):
                         player_pos = next_p1
                         p1_moved = True
@@ -483,15 +521,27 @@ def main():
                     if CURRENT_MODE == "DEFAULT":
                         # 預設模式：方向鍵直接和 WASD 一樣，控制同一個藍色玩家
                         next_p1 = maze.move_player(player_pos, dir_from_arrow)
+
+                        # 🔑 2. 預設模式方向鍵控制 P1，檢查 P1 下一格
+                        if maze.grid[next_p1[0], next_p1[1]] == 2 and not key_sys.has_key:
+                            sound_key.play()  # 🎵 放音效
+
                         player_pos = next_p1
                         p1_moved = True
                         
                     elif CURRENT_MODE == "FOG" and fog_players == 2:
                         # 迷霧模式：維持原樣，只有在 2P 狀態下，方向鍵才會控制綠色玩家二
                         next_p2 = maze.move_player(player2_pos, dir_from_arrow)
+
+                        # 🔑 3. 迷霧模式方向鍵控制 P2，檢查 P2 下一格
+                        if maze.grid[next_p2[0], next_p2[1]] == 2 and not key_sys.has_key:
+                            sound_key.play()  # 🎵 放音效
+
                         if key_sys.check_key_logic(next_p2, maze):
                             player2_pos = next_p2
                             p2_moved = True
+                if (p1_moved and player_pos != old_p1_pos) or (p2_moved and player2_pos != old_p2_pos):
+                    sound_move.play()
 
                 if p1_moved or p2_moved:
                     if not player_has_moved:
@@ -504,10 +554,14 @@ def main():
 
                     if player_pos == monster.pos:
                         player_game_over = True
+                        pygame.mixer.music.stop()  # 🎵 關閉背景音樂，讓死亡旋律更明顯
+                        sound_Died.play()  # 🎵 播放「登登登登～」死亡音樂
                         print("玩家被怪物抓到了！")
 
                     if fog_players == 2 and player2_pos == monster.pos:
                         player_game_over = True
+                        pygame.mixer.music.stop()  # 🎵 關閉背景音樂，讓死亡旋律更明顯
+                        sound_Died.play()  # 🎵 播放「登登登登～」死亡音樂
                         print("玩家二被怪物抓到了！")
 
                 # 判定合作勝利：任一玩家抵達終點，即全隊破關
@@ -515,10 +569,14 @@ def main():
                     player_game_over = True
                     winner = "P1 (BLUE)" if fog_players == 2 else "PLAYER"
                     stats["player_time"] = time.time() - player_start_time
+                    sound_win.play()
+
                 elif fog_players == 2 and player2_pos == maze.end_pos:
                     player_game_over = True
                     winner = "P2 (GREEN)"
                     stats["player_time"] = time.time() - player_start_time
+                    sound_win.play()
+
 
     cv2.destroyAllWindows()
 
