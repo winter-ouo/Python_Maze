@@ -2,8 +2,10 @@
 
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.13-green?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.10-yellow?style=flat-square)
+![Numpy](https://img.shields.io/badge/Numpy-2.2-blue?style=flat-square)
+![Pygame](https://img.shields.io/badge/Pygame-2.6-orange?style=flat-square)
 
-本專案是一個基於 Python 與 OpenCV 開發的互動式迷宮遊戲。核心系統採用隨機 Prim 演算法生成具備高度挑戰性的破碎地形，並結合多種經典的尋路演算法進行動態可視化展示。此外，遊戲提供整合了戰爭迷霧、隱蔽鑰匙機制與巡邏怪物的雙人合作生存模式。
+本專案是一個基於 Python 與 OpenCV 開發的互動式迷宮遊戲。核心系統採用隨機 Prim 演算法生成具備高度挑戰性的破碎地形，並結合多種經典的演算法進行動態可視化展示。此外，遊戲還提供整合了戰爭迷霧、隱蔽鑰匙機制與巡邏怪物的雙人合作生存模式。
 
 ---
 ## 專案目錄結構
@@ -15,14 +17,14 @@
 ├── venv/
 └── src/
     ├── __pycache__/
-    ├── fog_effect.py        # 實作多玩家戰爭迷霧效果，透過 OpenCV 與 NumPy 矩陣遮罩運算，動態渲染以玩家為中心的圓形可視範圍。
+    ├── fog_effect.py        # 迷霧效果，透過 OpenCV 與 NumPy 矩陣遮罩運算，動態渲染以玩家為中心的圓形可視範圍。
     ├── key.py               # 管理遊戲中的鑰匙機制，在關卡初始化時利用尋路演算法將鑰匙配置於必經之路外的區域，並處理玩家拾取判定。
     ├── main.py              # 專案的主程式入口，負責管理遊戲主選單與遊戲畫面之間的狀態切換，並處理滑鼠與鍵盤事件監聽。
-    ├── maze_generator.py    # 負責隨機迷宮生成，實作隨機 Prim 演算法以建立具備高破碎度、多分支特性的挑戰性地圖。
+    ├── maze_generator.py    # 隨機迷宮生成(隨機 Prim 演算法)，建立具備高破碎度、多分支特性的挑戰性地圖。
     ├── maze_model.py        # 定義迷宮的基礎資料結構，儲存地圖矩陣、起點與終點座標，並執行玩家移動時的碰撞牆壁判定。
     ├── monster.py           # 控制生存模式中的巡邏怪物，包含怪物的動態生成時間、沿特定垂直通道來回巡邏的移動邏輯。
-    ├── pathfinding.py       # 演算法核心模組，實作 A* 搜尋、廣度優先搜尋 (BFS)、深度優先搜尋 (DFS) 以及左手沿牆法 (Wall Follower)。
-    └── renderer.py          # 專責畫布繪製，將迷宮方格、數據面板、演算法足跡、閃爍道具與角色圓球整合輸出至 OpenCV 視窗。
+    ├── pathfinding.py       # 演算法模組，實作 A* 搜尋、廣度優先搜尋 (BFS)、深度優先搜尋 (DFS) 以及左手沿牆法 (Wall Follower)。
+    └── renderer.py          # 畫布繪製，將迷宮方格、數據面板、演算法足跡、閃爍道具與角色圓球整合輸出至 OpenCV 視窗。
 ```
 ---
 
@@ -44,7 +46,7 @@
 ### 系統環境要求
 * 操作系統：Windows
 * 開發語言：Python 3.10
-* 核心依賴庫：OpenCV-Python, NumPy
+* 核心依賴庫：OpenCV-Python, NumPy, pygame
 
 ### 鍵盤控制指南
 
