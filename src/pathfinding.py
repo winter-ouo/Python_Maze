@@ -51,7 +51,7 @@ def a_star_search(maze):
     return None, visited_order
 
 # ==========================================
-# 2. BFS (廣度優先)
+# 2. BFS (廣度優先 / 洪水法)
 # ==========================================
 def bfs_search(maze):
     start, end = maze.start_pos, maze.end_pos

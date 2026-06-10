@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import time  # === [新增] 引入 time 模組來計算每 10 秒現行 0.5 秒的時間差 ===
 
-
 def draw_single(maze, player_pos, path=None, visited=None, player2_pos=None, monster_pos=None):
     cell_size = 15
     img_h = maze.height * cell_size
@@ -97,8 +96,8 @@ def draw_single(maze, player_pos, path=None, visited=None, player2_pos=None, mon
 
     return canvas
 
-
-def draw_sidebar(height, current_algo, stats, seed_val, is_cleared, hover_btn=None):
+#增加is_fog_dispelled=False#
+def draw_sidebar(height, current_algo, stats, seed_val, is_cleared, hover_btn=None,is_fog_dispelled=False):
     width = 250
     sidebar = np.zeros((height, width, 3), dtype=np.uint8)
     sidebar[:] = (35, 30, 30)
@@ -161,6 +160,24 @@ def draw_sidebar(height, current_algo, stats, seed_val, is_cleared, hover_btn=No
         cv2.putText(sidebar, "PLAYING", (120, 595), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (100, 180, 255), 1)
 
     cv2.putText(sidebar, "ESC: Exit Game", (20, 670), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (120, 120, 120), 1)
+    return sidebar
+#新增#
+    btn_y1, btn_y2 = 400, 450
+    btn_x1, btn_x2 = 25, 225
+
+    if not is_fog_dispelled:
+        # 畫按鈕
+        btn_color = (100, 100, 200) if hover_btn == "DISPEL" else (80, 80, 160)
+        cv2.rectangle(sidebar, (btn_x1, btn_y1), (btn_x2, btn_y2), btn_color, -1)
+        cv2.putText(sidebar, "Dispel Fog", (btn_x1 + 45, btn_y1 + 35),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    else:
+        # 畫紅字警告
+        cv2.putText(sidebar, "FOG DISPELLED", (btn_x1 + 10, btn_y1 + 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        cv2.putText(sidebar, "(Not Timed)", (btn_x1 + 30, btn_y1 + 60),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+
     return sidebar
 
 
