@@ -5,9 +5,6 @@
 ![Numpy](https://img.shields.io/badge/Numpy-2.2-blue?style=flat-square)
 ![Pygame](https://img.shields.io/badge/Pygame-2.6-orange?style=flat-square)
 
-::: warning
-### 主分支為Demo版 // Demo分支為完整版!!
-:::
 
 本專案是一個基於 Python 與 OpenCV 開發的互動式迷宮遊戲。核心系統採用隨機 Prim 演算法生成具備高度挑戰性的破碎地形，並結合多種經典的演算法進行動態可視化展示。此外，遊戲還提供整合了戰爭迷霧、隱蔽鑰匙機制與巡邏怪物的雙人合作生存模式。
 #### 簡報連結：[https://canva.link/dosfk4twqmknz6w](https://canva.link/dosfk4twqmknz6w)
